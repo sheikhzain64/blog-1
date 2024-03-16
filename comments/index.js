@@ -1,8 +1,9 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const crypto = require('crypto');
-const cors = require('cors');
-const app = express();
+const express = require('express');   // Import the express module
+const bodyParser = require('body-parser'); // Import the body-parser module to parse incoming request bodies
+const crypto = require('crypto');// Import the crypto module's randomBytes function to generate unique IDs
+const cors = require('cors');// Import the cors module to enable Cross-Origin Resource Sharing
+const app = express();// Create an instance of an express application
+const axios = require('axios');// Import the axios module to make HTTP requests
 
 // Middleware to parse JSON data
 app.use(bodyParser.json());
@@ -17,13 +18,26 @@ app.get('/posts/:id/comments', (req, res) => {
 });
 
 // POST route to add a new comment to a specific post
-app.post('/posts/:id/comments', (req, res) => {
+app.post('/posts/:id/comments', async (req, res) => {
     const { content } = req.body;
     const commentId = crypto.randomBytes(4).toString('hex');
     const comments = commentsByPostId[req.params.id] || [];
     comments.push({id: commentId, content});
     commentsByPostId[req.params.id] = comments; // Save the comments to the array
+    await axios.post('http://localhost:4005/events', {
+        type: 'CommentCreated',
+        data: {
+            id: commentId,
+            content,
+            postId: req.params.id
+        }
+    });
     res.status(201).send(comments);
+});
+// POST route to receive events from the event bus
+app.post('/events', (req, res) => {
+    console.log('Received Event:', req.body.type);
+    res.send({});
 });
 
 // Start the server

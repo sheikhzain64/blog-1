@@ -13,6 +13,8 @@ const bodyParser = require('body-parser');
 // Create an instance of an express application
 const app = express();
 
+const axios = require('axios'); // Import the axios module to make HTTP requests
+
 // Create an empty object to store posts
 const posts = {};
 
@@ -29,7 +31,7 @@ app.get('/posts', (req, res) => {
 });
 
 // Define a POST route for /posts
-app.post('/posts', (req, res) => {
+app.post('/posts', async (req, res) => {
     // Generate a unique ID for the new post
     const id = randomBytes(4).toString('hex');
 
@@ -44,8 +46,23 @@ app.post('/posts', (req, res) => {
         name
     };
 
+    await axios.post('http://localhost:4005/events', {
+        type: 'PostCreated',
+        data: {
+            id,
+            title,
+            name
+        }
+    });
+
     // Send the new post as the response
     res.status(201).send(posts[id]);
+});
+
+// Define a POST route for /events
+app.post('/events', (req, res) => {
+    console.log('Received Event', req.body.type);
+    res.send({});
 });
 
 // Start the server on port 4000
